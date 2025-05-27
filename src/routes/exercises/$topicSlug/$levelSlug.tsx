@@ -36,6 +36,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import errorSound from "@/assets/sounds/error.mp3";
+import successSound from "@/assets/sounds/success.mp3";
+import resultSound from "@/assets/sounds/result-sound.mp3";
+
+import useSound from "use-sound";
 
 export const Route = createFileRoute("/exercises/$topicSlug/$levelSlug")({
   loader: async ({ params: { topicSlug, levelSlug } }) =>
@@ -67,10 +72,15 @@ function LevelComponent() {
   const { correct, incorrect, unanswered } = useQuestionsData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const [playSuccess] = useSound(successSound);
+  const [playError] = useSound(errorSound);
+  const [playResult] = useSound(resultSound);
+
   // 5) Reset del input cada vez que cambie de ejercicio
   const exercise = exercises[currentExerciseIndex];
 
   const [celebratedIds, setCelebratedIds] = useState<string[]>([]);
+  const [errorIds, setErrorIds] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -86,7 +96,15 @@ function LevelComponent() {
     if (exercise?.answereState === "success") {
       if (!celebratedIds.includes(exercise.id)) {
         showConfetti();
+        playSuccess();
         setCelebratedIds((prev) => [...prev, exercise.id]);
+      }
+    }
+
+    if (exercise?.answereState === "error") {
+      if (!errorIds.includes(exercise.id)) {
+        playError();
+        setErrorIds((prev) => [...prev, exercise.id]);
       }
     }
   }, [exercise?.answereState]);
@@ -128,6 +146,8 @@ function LevelComponent() {
 
   const resetLevel = () => {
     resetExcerciseLevel();
+    setCelebratedIds([]);
+    setErrorIds([]);
     setIsDialogOpen(false);
   };
 
@@ -136,6 +156,7 @@ function LevelComponent() {
       nextQuestion();
     } else {
       setIsDialogOpen(true);
+      playResult();
     }
   };
 
