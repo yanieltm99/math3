@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import legacy from "@vitejs/plugin-legacy";
 
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import { resolve } from "node:path";
@@ -53,6 +54,11 @@ export default defineConfig({
         suppressWarnings: true,
         type: "module",
       },
+    }),
+    legacy({
+      targets: ["defaults", "not IE 11", "chrome >= 64", "safari >= 11"],
+      renderLegacyChunks: true,
+      modernPolyfills: true,
     }),
   ],
   preview: {
