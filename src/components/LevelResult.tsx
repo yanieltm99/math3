@@ -32,19 +32,27 @@ export default function LevelResults({
     return () => clearTimeout(timer);
   }, [score]);
 
+  const exelentColor = "text-yellow-600 dark:text-yellow-400";
+  const goodColor = "text-blue-600 dark:text-blue-400";
+  const needsImprovementColor = "text-orange-600 dark:text-orange-400";
+
+  const exelentBgColor = "bg-yellow-600 dark:bg-yellow-400";
+  const goodBgColor = "bg-blue-600 dark:bg-blue-400";
+  const needsImprovementBgColor = "bg-orange-600 dark:bg-orange-400";
+
   // Determine performance level and corresponding message
   const getPerformanceDetails = () => {
     if (score >= 80) {
       return {
         icon: <Trophy className="h-12 w-12 sm:h-16 sm:w-16 text-yellow-500" />,
         message: "¡Excelente! ¡Lo estás haciendo genial!...",
-        color: "text-yellow-600 dark:text-yellow-400",
+        color: exelentColor,
       };
     } else if (score >= 50) {
       return {
         icon: <ThumbsUp className="h-12 w-12 sm:h-16 sm:w-16 text-blue-500" />,
         message: "¡Buen trabajo! ¡Estás progresando!",
-        color: "text-blue-600 dark:text-blue-400",
+        color: goodColor,
       };
     } else {
       return {
@@ -52,7 +60,7 @@ export default function LevelResults({
           <BookOpen className="h-10 w-10 sm:h-16 sm:w-16 text-orange-500" />
         ),
         message: "¡Sigue practicando! ¡La próxima vez lo haras mejor!",
-        color: "text-orange-600 dark:text-orange-400",
+        color: needsImprovementColor,
       };
     }
   };
@@ -70,12 +78,12 @@ export default function LevelResults({
         <Progress
           value={progressValue}
           className="w-full h-3"
-          color={
+          indicatorColor={
             score >= 80
-              ? "bg-green-500"
+              ? exelentBgColor
               : score >= 50
-                ? "bg-blue-500"
-                : "bg-purple-500"
+                ? goodBgColor
+                : needsImprovementBgColor
           }
         />
       </div>
