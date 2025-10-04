@@ -135,6 +135,6 @@ src/
 
 **¡Hecho con ❤️ para hacer las matemáticas más divertidas!**
 
-[🌐 Ver Demo](https://math3-eight.vercel.app/) • [📧 Contacto](mailto:tu-email@ejemplo.com) • [🐛 Reportar Bug](https://github.com/tu-usuario/math3/issues)
+[🌐 Ver Demo](https://math3-eight.vercel.app/) • [📧 Contacto](mailto:yanieltm861@gmail.com) • [🐛 Reportar Bug](https://github.com/yanieltm99/math3/issues)
 
 </div>
