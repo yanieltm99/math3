@@ -11,7 +11,10 @@ const alertVariants = cva(
       variant: {
         default: "bg-main text-main-foreground",
         destructive: "bg-black text-white",
+        // Legacy misspelling kept temporarily for compatibility
         descructive1:
+          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        destructiveWarning:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
       },
     },

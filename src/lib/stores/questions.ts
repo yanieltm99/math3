@@ -1,18 +1,58 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AnswereState, Exercise } from "../types";
-import { stringFormater } from "../utils";
+import type { AnswerState, Exercise } from "../types";
+import { stringFormatter } from "../utils";
+
+// Types for enhanced exercise state
+type ExerciseWithState = Exercise & {
+  answerState?: AnswerState;
+  userSelectedAnswers?: string[];
+  correctSelections?: string[];
+  wrongSelections?: string[];
+};
+
+// Pure validation functions
+function validateFillInAnswer(userAnswer: string, correctAnswer: string | number): AnswerState {
+  const normalizedUser = stringFormatter(userAnswer);
+  const normalizedCorrect = stringFormatter(correctAnswer);
+  return normalizedUser === normalizedCorrect ? "success" : "error";
+}
+
+function validateSelectAnswer(userAnswer: string, correctAnswer: string): AnswerState {
+  return userAnswer === correctAnswer ? "success" : "error";
+}
+
+function validateMultiSelectAnswer(
+  userAnswers: string[],
+  correctAnswers: string[]
+): { state: AnswerState; correctSelections?: string[]; wrongSelections?: string[] } {
+  if (userAnswers.length === 0) {
+    return { state: undefined };
+  }
+
+  const correctSelections = correctAnswers.filter(answer => userAnswers.includes(answer));
+  const wrongSelections = userAnswers.filter(answer => !correctAnswers.includes(answer));
+
+  if (correctSelections.length === correctAnswers.length && wrongSelections.length === 0) {
+    return { state: "success" };
+  }
+
+  if (correctSelections.length > 0) {
+    return {
+      state: "partial_success",
+      correctSelections,
+      wrongSelections
+    };
+  }
+
+  return { state: "error" };
+}
 
 interface State {
-  exercises: (Exercise & {
-    answereState?: AnswereState;
-    userSelectedAnswers?: string[];
-    correctSeleccions?: string[];
-    badSellection?: string[];
-  })[];
+  exercises: ExerciseWithState[];
   currentExercise: number;
   setExercises: (exs: Exercise[]) => void;
-  toogleAnswer: (exerciseId: string, answerId: string) => void;
+  toggleAnswer: (exerciseId: string, answerId: string) => void;
   next: () => void;
   previous: () => void;
   reset: () => void;
@@ -54,10 +94,10 @@ export const useExerciseStore = create(
         const newExercises = structuredClone(exercises);
 
         newExercises.forEach((exercise) => {
-          exercise.answereState = undefined;
+          exercise.answerState = undefined;
           exercise.userSelectedAnswers = [];
-          exercise.correctSeleccions = [];
-          exercise.badSellection = [];
+          exercise.correctSelections = [];
+          exercise.wrongSelections = [];
         });
 
         set({ exercises: newExercises });
@@ -71,100 +111,61 @@ export const useExerciseStore = create(
         }
       },
 
-      toogleAnswer: (exerciseId: string, answerId: string) => {
+      toggleAnswer: (exerciseId: string, answerId: string) => {
         const { exercises } = get();
         const newExercises = structuredClone(exercises);
         const exerciseIndex = newExercises.findIndex(
           (ex) => ex.id === exerciseId,
         );
 
-        const excerciseInfo = newExercises[exerciseIndex];
+        if (exerciseIndex === -1) return;
 
-        if (excerciseInfo.userSelectedAnswers) {
-          const answerIndex = excerciseInfo.userSelectedAnswers.findIndex(
-            (ans) => ans === answerId,
-          );
-          if (answerIndex !== -1) {
-            excerciseInfo.userSelectedAnswers.splice(answerIndex, 1);
-          } else {
-            excerciseInfo.userSelectedAnswers.push(answerId);
-          }
-        } else {
-          excerciseInfo.userSelectedAnswers = [answerId];
+        const exercise = newExercises[exerciseIndex];
+
+        // Update user selected answers
+        if (!exercise.userSelectedAnswers) {
+          exercise.userSelectedAnswers = [];
         }
 
-        const userSelectedAnswers = stringFormater(
-          excerciseInfo.userSelectedAnswers[0],
+        const answerIndex = exercise.userSelectedAnswers.findIndex(
+          (ans) => ans === answerId,
         );
-        const correctAnswer = stringFormater(excerciseInfo.correctAnswer);
 
-        // verify answer state
-
-        if (excerciseInfo.type === "fill-in") {
-          if (userSelectedAnswers === correctAnswer) {
-            excerciseInfo.answereState = "success";
-          }
-
-          if (userSelectedAnswers !== correctAnswer) {
-            excerciseInfo.answereState = "error";
+        if (answerIndex !== -1) {
+          exercise.userSelectedAnswers.splice(answerIndex, 1);
+        } else {
+          // For single-select types, replace the answer; for multi-select, add it
+          if (exercise.type === "select" || exercise.type === "fill-in") {
+            exercise.userSelectedAnswers = [answerId];
+          } else {
+            exercise.userSelectedAnswers.push(answerId);
           }
         }
 
-        if (excerciseInfo.type === "select") {
-          if (
-            excerciseInfo.userSelectedAnswers[0] === excerciseInfo.correctAnswer
-          ) {
-            excerciseInfo.answereState = "success";
-          }
-
-          if (
-            excerciseInfo.userSelectedAnswers[0] !== excerciseInfo.correctAnswer
-          ) {
-            excerciseInfo.answereState = "error";
-          }
+        // Validate answer based on exercise type
+        if (exercise.userSelectedAnswers.length === 0) {
+          exercise.answerState = undefined;
+          exercise.correctSelections = [];
+          exercise.wrongSelections = [];
+        } else if (exercise.type === "fill-in") {
+          exercise.answerState = validateFillInAnswer(
+            exercise.userSelectedAnswers[0],
+            exercise.correctAnswer as string | number
+          );
+        } else if (exercise.type === "select") {
+          exercise.answerState = validateSelectAnswer(
+            exercise.userSelectedAnswers[0],
+            exercise.correctAnswer as string
+          );
+        } else if (exercise.type === "select-multiple") {
+          const validation = validateMultiSelectAnswer(
+            exercise.userSelectedAnswers,
+            exercise.correctAnswer as string[]
+          );
+          exercise.answerState = validation.state;
+          exercise.correctSelections = validation.correctSelections || [];
+          exercise.wrongSelections = validation.wrongSelections || [];
         }
-
-        if (excerciseInfo.type === "select-multiple") {
-          const correctAnswers = excerciseInfo.correctAnswer as string[];
-          const userAnswers = excerciseInfo.userSelectedAnswers as string[];
-
-          if (correctAnswers.length === userAnswers.length) {
-            const isAllCorrect = correctAnswers.every((answer) =>
-              userAnswers.includes(answer),
-            );
-
-            if (isAllCorrect) {
-              excerciseInfo.answereState = "success";
-            } else {
-              // get correct selections
-              const correctSeleccions = correctAnswers.filter((answer) =>
-                userAnswers.includes(answer),
-              );
-
-              const badSellection = userAnswers.filter(
-                (answerId) => !correctAnswers.includes(answerId),
-              );
-
-              if (correctSeleccions.length > 0) {
-                excerciseInfo.answereState = "partial_success";
-                excerciseInfo.correctSeleccions = correctSeleccions;
-                excerciseInfo.badSellection = badSellection;
-              }
-
-              if (correctSeleccions.length === 0) {
-                excerciseInfo.answereState = "error";
-              }
-
-              excerciseInfo.answereState = undefined;
-            }
-          }
-        }
-
-        if (excerciseInfo.userSelectedAnswers.length === 0) {
-          excerciseInfo.answereState = undefined;
-        }
-
-        newExercises[exerciseIndex] = excerciseInfo;
 
         set({ exercises: newExercises });
       },

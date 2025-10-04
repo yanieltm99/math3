@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ThemeSwitcher } from "../ThemeSwitcher";
-import FontSizeAjuster from "../FontSizeAjuster";
+import { ThemeSwitcher } from "./ThemeSwitcher";
+import FontSizeAdjuster from "./FontSizeAdjuster";
 
 export const Navbar = () => {
   // const location = useLocation();
@@ -40,9 +40,8 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-4">
           {/* <Search /> */}
-
           <div className="flex items-center justify-end gap-4">
-            <FontSizeAjuster />
+            <FontSizeAdjuster />
             <ThemeSwitcher />
           </div>
         </div>

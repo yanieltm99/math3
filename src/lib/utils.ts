@@ -5,6 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const stringFormater = (text: string | string[] | number) => {
+export const stringFormatter = (text: string | string[] | number) => {
   return text.toString().replaceAll(" ", "").toLowerCase().trim();
 };

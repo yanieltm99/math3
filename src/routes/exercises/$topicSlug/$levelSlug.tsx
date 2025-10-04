@@ -21,11 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useQuestionsData } from "@/lib/hooks/useQuestions";
-import { getExercises } from "@/lib/math.data";
+import { getExercises } from "@/lib/data/selectors";
 import { useExerciseStore } from "@/lib/stores/questions";
 import { cn } from "@/lib/utils";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import confetti from "canvas-confetti";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -36,53 +35,49 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import errorSound from "@/assets/sounds/error.mp3";
-import successSound from "@/assets/sounds/success.mp3";
-import resultSound from "@/assets/sounds/result-sound.mp3";
-
-import useSound from "use-sound";
+import { useAudioFeedback } from "@/lib/hooks/useAudioFeedback";
+import { useExerciseNavigation } from "@/lib/hooks/useExerciseNavigation";
+import { showConfetti } from "@/lib/utils/confetti";
 
 export const Route = createFileRoute("/exercises/$topicSlug/$levelSlug")({
   loader: async ({ params: { topicSlug, levelSlug } }) =>
     getExercises(topicSlug, levelSlug),
-  component: LevelComponent,
+  component: LevelPage,
 });
 
-function LevelComponent() {
-  // 1) loader data
+function LevelPage() {
   const loadedExercises = Route.useLoaderData();
 
-  // 2) zustand selectors (siempre en el mismo orden)
+  // Zustand store selectors
   const setExercises = useExerciseStore((s) => s.setExercises);
   const exercises = useExerciseStore((s) => s.exercises);
   const currentExerciseIndex = useExerciseStore((s) => s.currentExercise);
-  const toogleAnswer = useExerciseStore((s) => s.toogleAnswer);
-  const nextQuestion = useExerciseStore((s) => s.next);
+  const toggleAnswer = useExerciseStore((s) => s.toggleAnswer);
   const previous = useExerciseStore((s) => s.previous);
-  const reset = useExerciseStore((s) => s.reset);
-  const resetExcerciseLevel = useExerciseStore((s) => s.resetLevel);
 
-  // 3) efecto para poblar el store al cargar
+  // Load exercises into store on mount
   useEffect(() => {
     setExercises(loadedExercises);
   }, [loadedExercises, setExercises]);
 
-  // 4) estado local para el input "fill-in", siempre inicializado (sin condicionales)
+  // Local state
   const [fillInInputState, setFillInInputState] = useState("");
   const { correct, incorrect, unanswered } = useQuestionsData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const [playSuccess] = useSound(successSound);
-  const [playError] = useSound(errorSound);
-  const [playResult] = useSound(resultSound);
-
-  // 5) Reset del input cada vez que cambie de ejercicio
+  const { playSuccess, playError, playResult } = useAudioFeedback();
+  const navigation = useExerciseNavigation();
+  
+  // Current exercise and celebration tracking
   const exercise = exercises[currentExerciseIndex];
-
   const [celebratedIds, setCelebratedIds] = useState<string[]>([]);
   const [errorIds, setErrorIds] = useState<string[]>([]);
-  const router = useRouter();
 
+  const handleShowConfetti = async () => {
+    await showConfetti();
+  };
+
+  // Reset input when exercise changes
   useEffect(() => {
     if (exercise?.type === "fill-in") {
       const firstAnswer = exercise.userSelectedAnswers?.[0]?.toString() || "";
@@ -90,26 +85,28 @@ function LevelComponent() {
     } else {
       setFillInInputState("");
     }
-  }, [exercise]);
+  }, [exercise?.id, exercise?.type]);
 
+  // Handle audio feedback and visual effects based on answer state
   useEffect(() => {
-    if (exercise?.answereState === "success") {
+    if (!exercise) return;
+    
+    if (exercise.answerState === "success") {
       if (!celebratedIds.includes(exercise.id)) {
-        showConfetti();
+        handleShowConfetti();
         playSuccess();
         setCelebratedIds((prev) => [...prev, exercise.id]);
       }
     }
 
-    if (exercise?.answereState === "error") {
+    if (exercise.answerState === "error") {
       if (!errorIds.includes(exercise.id)) {
         playError();
         setErrorIds((prev) => [...prev, exercise.id]);
       }
     }
-  }, [exercise?.answereState]);
+  }, [exercise?.answerState, exercise?.id, celebratedIds, errorIds, playSuccess, playError, handleShowConfetti]);
 
-  // 6) Mientras no haya ejercicios, mostramos “loading”
   if (exercises.length === 0) {
     return (
       <PageWrapper scrollable>
@@ -118,46 +115,33 @@ function LevelComponent() {
     );
   }
 
-  // 7) manejadores
+  // Event handlers
   const handleAnswer = (value?: string) => {
     if (!value) return;
     if (exercise.type === "select") {
-      toogleAnswer(exercise.id, value);
+      toggleAnswer(exercise.id, value);
     }
   };
 
   const handleSubmitAnswer = () => {
     if (exercise.type === "fill-in" && fillInInputState.trim()) {
-      toogleAnswer(exercise.id, fillInInputState.trim());
+      toggleAnswer(exercise.id, fillInInputState.trim());
     }
   };
 
-  const showConfetti = () => {
-    confetti({
-      particleCount: 150,
-      spread: 70,
-    });
-  };
 
-  const goBack = () => {
-    reset();
-    router.navigate({ to: ".." });
-  };
-
-  const resetLevel = () => {
-    resetExcerciseLevel();
+  const handleResetLevel = () => {
+    navigation.resetLevel();
     setCelebratedIds([]);
     setErrorIds([]);
     setIsDialogOpen(false);
   };
 
-  const next = () => {
-    if (currentExerciseIndex !== exercises.length - 1) {
-      nextQuestion();
-    } else {
+  const handleNext = () => {
+    navigation.next(() => {
       setIsDialogOpen(true);
       playResult();
-    }
+    });
   };
 
   // 8) render principal
@@ -180,7 +164,7 @@ function LevelComponent() {
               unanswered={unanswered}
             />
             <div
-              onClick={goBack}
+              onClick={navigation.goBack}
               className={`absolute md:hidden top-0 right-0 p-2 ${cn(
                 buttonVariants({
                   variant: "destructive",
@@ -192,7 +176,7 @@ function LevelComponent() {
             </div>
             <Button
               variant="destructive"
-              onClick={goBack}
+              onClick={navigation.goBack}
               className="hidden md:flex"
             >
               <DoorOpen />
@@ -211,7 +195,7 @@ function LevelComponent() {
             <RadioGroup
               value={exercise.userSelectedAnswers?.toString() || ""}
               onValueChange={handleAnswer}
-              disabled={exercise.answereState !== undefined}
+              disabled={exercise.answerState !== undefined}
               className="space-y-3"
             >
               {exercise.options?.map((option, idx) => (
@@ -241,15 +225,14 @@ function LevelComponent() {
                 type="text"
                 value={fillInInputState}
                 onChange={(e) => setFillInInputState(e.target.value)}
-                disabled={exercise.answereState !== undefined}
+                disabled={exercise.answerState !== undefined}
               />
             )}
-
             {exercise.type === "fill-in" && (
               <Button
                 size="lg"
                 onClick={handleSubmitAnswer}
-                disabled={exercise.answereState !== undefined}
+                disabled={exercise.answerState !== undefined}
               >
                 <CheckIcon />
                 Revisar
@@ -266,9 +249,9 @@ function LevelComponent() {
               className="w-full md:w-auto"
               disabled={currentExerciseIndex === 0}
             >
-              <ArrowLeftIcon /> Ir Atras
+              <ArrowLeftIcon /> Ir atrás
             </Button>
-            <Button size="lg" className="w-full md:w-auto" onClick={next}>
+            <Button size="lg" className="w-full md:w-auto" onClick={handleNext}>
               <ArrowRightIcon />
               {currentExerciseIndex !== exercises.length - 1
                 ? "Siguiente"
@@ -278,7 +261,7 @@ function LevelComponent() {
         </CardFooter>
       </Card>
       <ExerciseAlert
-        answereState={exercise.answereState}
+        answerState={exercise.answerState}
         correctAnswerFeedback={exercise.correctAnswerFeedback}
         incorrectAnswerFeedback={exercise.incorrectAnswerFeedback}
       />
@@ -297,11 +280,11 @@ function LevelComponent() {
           />
           <DialogFooter className="mt-3 ">
             <div className="flex justify-center gap-4">
-              <Button variant="neutral" size="sm" onClick={resetLevel}>
-                <RefreshCwIcon h-6 w-6 /> Reiniciar
+              <Button variant="neutral" size="sm" onClick={handleResetLevel}>
+                <RefreshCwIcon className="h-6 w-6" /> Reiniciar
               </Button>
-              <Button variant="destructive" size="sm" onClick={goBack}>
-                <DoorOpen h-6 w-6 /> Salir
+              <Button variant="destructive" size="sm" onClick={navigation.goBack}>
+                <DoorOpen className="h-6 w-6" /> Salir
               </Button>
             </div>
           </DialogFooter>

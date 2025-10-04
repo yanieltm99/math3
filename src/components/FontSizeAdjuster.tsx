@@ -2,7 +2,7 @@ import { useFontSize } from "@/lib/providers/font-size-content";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 
-export default function FontSizeAjuster() {
+export default function FontSizeAdjuster() {
   const { increaseFontSize, decreaseFontSize } = useFontSize();
   const [isClient, setIsClient] = useState(false);
 

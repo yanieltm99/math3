@@ -8,10 +8,10 @@ export const useQuestionsData = () => {
   let unanswered = 0;
 
   questions.forEach((question) => {
-    const { answereState } = question;
-    if (answereState === undefined) {
+    const { answerState } = question;
+    if (answerState === undefined) {
       unanswered++;
-    } else if (answereState === "success") {
+    } else if (answerState === "success") {
       correct++;
     } else {
       incorrect++;

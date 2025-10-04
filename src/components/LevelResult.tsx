@@ -9,7 +9,7 @@ import {
   Trophy,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 
 interface QuizResultsProps {
   totalQuestions: number;
@@ -17,7 +17,7 @@ interface QuizResultsProps {
   incorrectAnswers: number;
 }
 
-export default function LevelResults({
+function LevelResults({
   totalQuestions,
   correctAnswers,
   incorrectAnswers,
@@ -32,40 +32,43 @@ export default function LevelResults({
     return () => clearTimeout(timer);
   }, [score]);
 
-  const exelentColor = "text-yellow-600 dark:text-yellow-400";
+  const excellentColor = "text-yellow-600 dark:text-yellow-400";
   const goodColor = "text-blue-600 dark:text-blue-400";
   const needsImprovementColor = "text-orange-600 dark:text-orange-400";
 
-  const exelentBgColor = "bg-yellow-600 dark:bg-yellow-400";
+  const excellentBgColor = "bg-yellow-600 dark:bg-yellow-400";
   const goodBgColor = "bg-blue-600 dark:bg-blue-400";
   const needsImprovementBgColor = "bg-orange-600 dark:bg-orange-400";
 
-  // Determine performance level and corresponding message
-  const getPerformanceDetails = () => {
+  // Memoize performance details calculation
+  const performanceDetails = useMemo(() => {
     if (score >= 80) {
       return {
         icon: <Trophy className="h-12 w-12 sm:h-16 sm:w-16 text-yellow-500" />,
         message: "¡Excelente! ¡Lo estás haciendo genial!...",
-        color: exelentColor,
+        color: excellentColor,
+        bgColor: excellentBgColor,
       };
     } else if (score >= 50) {
       return {
         icon: <ThumbsUp className="h-12 w-12 sm:h-16 sm:w-16 text-blue-500" />,
         message: "¡Buen trabajo! ¡Estás progresando!",
         color: goodColor,
+        bgColor: goodBgColor,
       };
     } else {
       return {
         icon: (
           <BookOpen className="h-10 w-10 sm:h-16 sm:w-16 text-orange-500" />
         ),
-        message: "¡Sigue practicando! ¡La próxima vez lo haras mejor!",
+        message: "¡Sigue practicando! ¡La próxima vez lo harás mejor!",
         color: needsImprovementColor,
+        bgColor: needsImprovementBgColor,
       };
     }
-  };
+  }, [score, excellentColor, excellentBgColor, goodColor, goodBgColor, needsImprovementColor, needsImprovementBgColor]);
 
-  const { icon, message, color } = getPerformanceDetails();
+  const { icon, message, color, bgColor } = performanceDetails;
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -78,13 +81,7 @@ export default function LevelResults({
         <Progress
           value={progressValue}
           className="w-full h-3"
-          indicatorColor={
-            score >= 80
-              ? exelentBgColor
-              : score >= 50
-                ? goodBgColor
-                : needsImprovementBgColor
-          }
+          indicatorColor={bgColor}
         />
       </div>
 
@@ -129,15 +126,15 @@ interface StatCardProps {
   textColor: string;
 }
 
-function StatCard({
+const StatCard = memo<StatCardProps>(function StatCard({
   icon,
   title,
   value,
   total,
   color,
   textColor,
-}: StatCardProps) {
-  const percentage = Math.round((value / total) * 100) || 0;
+}) {
+  const percentage = useMemo(() => Math.round((value / total) * 100) || 0, [value, total]);
 
   return (
     <Card className={`${color} border-none dark:border-gray-700`}>
@@ -160,4 +157,6 @@ function StatCard({
       </CardContent>
     </Card>
   );
-}
+});
+
+export default memo(LevelResults);

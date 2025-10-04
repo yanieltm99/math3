@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import PageWrapper from "@/components/PageWrapper";
 import { ArrowRight, Star } from "lucide-react";
 
-import teaching from "../../public/Teaching-rafiki.svg";
+const teaching = "/Teaching-rafiki.svg";
 
 export const Route = createFileRoute("/")({
-  component: App,
+  component: IndexPage,
 });
 
-function App() {
+function IndexPage() {
   return (
     <PageWrapper>
       <div className="relative overflow-hidden bg-gradient-to-b from-blue-400 to-blue-300 dark:from-blue-800 dark:to-blue-900 py-6 md:py-14">

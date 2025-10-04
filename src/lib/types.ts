@@ -33,4 +33,4 @@ export interface ExerciseOptions {
   value: string | number;
 }
 
-export type AnswereState = "success" | "partial_success" | "error" | undefined;
+export type AnswerState = "success" | "partial_success" | "error" | undefined;

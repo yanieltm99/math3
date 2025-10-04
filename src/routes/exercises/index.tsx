@@ -9,16 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getTopics } from "@/lib/math.data";
+import { getTopics } from "@/lib/data/selectors";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/exercises/")({
   loader: async () => getTopics(),
-  component: ExcercisePageComponent,
+  component: ExercisesPage,
 });
 
-function ExcercisePageComponent() {
+function ExercisesPage() {
   const topics = Route.useLoaderData();
 
   return (
@@ -35,7 +35,7 @@ function ExcercisePageComponent() {
           <Card key={topic.slug}>
             <CardHeader className="border-b-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-fullp-2 text-2xl">{topic.icon}</div>
+                <div className="rounded-full p-2 text-2xl">{topic.icon}</div>
                 <CardTitle className="text-xl">{topic.name}</CardTitle>
               </div>
             </CardHeader>

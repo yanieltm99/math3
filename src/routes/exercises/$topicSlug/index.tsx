@@ -8,16 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getTopic } from "@/lib/math.data";
+import { getTopic } from "@/lib/data/selectors";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 
 export const Route = createFileRoute("/exercises/$topicSlug/")({
   loader: async ({ params: { topicSlug } }) => getTopic(topicSlug),
-  component: TopicInfoComponent,
+  component: TopicPage,
 });
 
-function TopicInfoComponent() {
+function TopicPage() {
   const topic = Route.useLoaderData();
 
   if (!topic) {
@@ -29,7 +29,7 @@ function TopicInfoComponent() {
               <h2 className="text-2xl font-bold">Tema no encontrado</h2>
               <Link to="/exercises">
                 <Button variant="neutral">
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Regreasar
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Regresar
                 </Button>
               </Link>
             </div>
@@ -48,12 +48,12 @@ function TopicInfoComponent() {
         <CardContent>
           <div className="flex justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-fullp-2 text-2xl">{topic.icon}</div>
+              <div className="rounded-full p-2 text-2xl">{topic.icon}</div>
               <h2 className="text-2xl font-bold">{topic.name}</h2>
             </div>
             <Link to="/exercises">
               <Button variant="neutral">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Regreasar
+                <ArrowLeft className="mr-2 h-4 w-4" /> Regresar
               </Button>
             </Link>
           </div>

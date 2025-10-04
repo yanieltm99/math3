@@ -1,4 +1,5 @@
 import { Bug, CheckIcon, HelpCircle } from "lucide-react";
+import { memo } from "react";
 
 interface LevelStatusProps {
   correct: number;
@@ -6,11 +7,11 @@ interface LevelStatusProps {
   unanswered: number;
 }
 
-export const LevelStatus = ({
+export const LevelStatus = memo<LevelStatusProps>(({
   correct,
   incorrect,
   unanswered,
-}: LevelStatusProps) => {
+}) => {
   return (
     <div className="flex items-center gap-6">
       {/* Correctas */}
@@ -47,4 +48,6 @@ export const LevelStatus = ({
       </div>
     </div>
   );
-};
+});
+
+LevelStatus.displayName = "LevelStatus";
