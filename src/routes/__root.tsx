@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/layout/NavBar";
+import { Navbar } from "@/components/NavBar";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 // import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
